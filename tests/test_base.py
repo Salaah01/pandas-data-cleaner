@@ -6,6 +6,7 @@ import pandas as pd
 from data_cleaners import base, exceptions
 from tests.utils import strategies
 
+
 class TestCleaningStrategy(TestCase):
     """Unittests for the `CleaningStrategy` class."""
 

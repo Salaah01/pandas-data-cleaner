@@ -1,6 +1,5 @@
 """This module contains shared methods for cleaning data."""
 
-import typing as _t
 import pandas as pd
 from .base import CleaningStrategy
 
