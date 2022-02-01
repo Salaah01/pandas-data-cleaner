@@ -3,9 +3,8 @@
 from unittest import TestCase
 from types import SimpleNamespace
 import pandas as pd
-from data_cleaners import base
+from data_cleaners import base, exceptions
 from tests.utils import strategies
-
 
 class TestCleaningStrategy(TestCase):
     """Unittests for the `CleaningStrategy` class."""
@@ -16,12 +15,13 @@ class TestCleaningStrategy(TestCase):
         """
 
         instance = SimpleNamespace(
-            requires_django=False,
             dataframe=None,
-            model=SimpleNamespace(DataCleaner=1)
+            required_options=['option_1'],
+            option_1=1,
         )
         self.assertEqual(
-            base.CleaningStrategy.can_use_cleaner(instance), (True, None)
+            base.CleaningStrategy.can_use_cleaner(instance),
+            (True, [])
         )
 
     def test_can_use_cleaner_fail(self):
@@ -30,39 +30,36 @@ class TestCleaningStrategy(TestCase):
         """
 
         instance = SimpleNamespace(
-            requires_django=False,
             dataframe=None,
-            model=SimpleNamespace()
-        )
-        self.assertEqual(
-            base.CleaningStrategy.can_use_cleaner(instance),
-            (False, "The model does not have a DataCleaner class."),
+            required_options=['option_1'],
         )
 
-    def test_validate_model_pass(self):
-        """Test that the `validate_model` method does not raise an error when
+        can_use, missing_opts = base.CleaningStrategy.can_use_cleaner(instance)
+        self.assertFalse(can_use, missing_opts)
+        self.assertEqual(len(missing_opts), 1)
+
+    def test_validate_options_pass(self):
+        """Test that the `validate_options` method does not raise an error when
         the model has the attributes the method expects.
         """
 
         instance = SimpleNamespace(
-            dataframe=None,
-            model=SimpleNamespace(DataCleaner=1),
-            can_use_cleaner=lambda: (True, None),
+            can_use_cleaner=lambda: (True, []),
         )
-        base.CleaningStrategy.validate_model(instance)
+        base.CleaningStrategy.validate_options(instance)
 
-    def test_validate_model_fail(self):
-        """Test that the `validate_model` method raises an error when the
+    def test_validate_options_fail(self):
+        """Test that the `validate_options` method raises an error when the
         model does not have the attributes the method expects.
         """
 
         instance = SimpleNamespace(
             dataframe=None,
             model=SimpleNamespace(),
-            can_use_cleaner=lambda: (False, "Failed"),
+            can_use_cleaner=lambda: (False, ["Failed"]),
         )
-        with self.assertRaises(NotImplementedError):
-            base.CleaningStrategy.validate_model(instance)
+        with self.assertRaises(exceptions.MissingOptionsError):
+            base.CleaningStrategy.validate_options(instance)
 
 
 class TestCleanData(TestCase):
@@ -74,29 +71,25 @@ class TestCleanData(TestCase):
         """
 
         # Create a test dataframe.
-        dataframe = pd.DataFrame(
-            {
-                "col1": [1, 2, 3],
-                "col2": [4, 5, 6],
-                "col3": [7, 8, 9],
-            }
-        )
+        dataframe = pd.DataFrame({
+            "col1": [1, 2, 3],
+            "col2": [4, 5, 6],
+            "col3": [7, 8, 9],
+        })
 
         # make a copy of the dataframe to test that the strategies are applied
         # in the correct order.
         results = base.clean_data(
             dataframe,
-            None,
-            [strategies.ReverseStrategy, strategies.FirstTwoRowsStrategy]
+            [strategies.ReverseStrategy, strategies.FirstXRowsStrategy],
+            x_top_rows=2
         ).reset_index(drop=True)
 
-        expected_results = pd.DataFrame(
-            {
-                "col1": [3, 2],
-                "col2": [6, 5],
-                "col3": [9, 8],
-            }
-        )
+        expected_results = pd.DataFrame({
+            "col1": [3, 2],
+            "col2": [6, 5],
+            "col3": [9, 8],
+        })
         self.assertTrue(
             results.equals(expected_results),
             f"\nActual:\n{results}\nExpected:\n{expected_results}",
@@ -104,14 +97,12 @@ class TestCleanData(TestCase):
 
     def test_no_mutations(self):
         """Test that the original dataframe is not mutated."""
-        dataframe = pd.DataFrame(
-            {
-                "col1": [1, 2, 3],
-                "col2": [4, 5, 6],
-                "col3": [7, 8, 9],
-            }
-        )
+        dataframe = pd.DataFrame({
+            "col1": [1, 2, 3],
+            "col2": [4, 5, 6],
+            "col3": [7, 8, 9],
+        })
 
         dataframe_copy = dataframe.copy()
-        base.clean_data(dataframe, None, [strategies.ReverseStrategy])
+        base.clean_data(dataframe, [strategies.ReverseStrategy])
         self.assertTrue(dataframe.equals(dataframe_copy))
