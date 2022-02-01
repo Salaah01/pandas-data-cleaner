@@ -13,9 +13,11 @@ class ReverseStrategy(base.CleaningStrategy):
         self.dataframe = self.dataframe.iloc[::-1]
 
 
-class FirstTwoRowsStrategy(base.CleaningStrategy):
-    """A strategy that shrinks the dataframe to only the first two rows."""
+class FirstXRowsStrategy(base.CleaningStrategy):
+    """A strategy that shrinks the dataframe to x number of rows."""
+
+    required_options = ['x_top_rows']
 
     def clean(self) -> pd.DataFrame:
-        """Shrinks the dataframe to only the first two rows."""
+        """Shrinks the dataframe to x number of rows."""
         self.dataframe = self.dataframe.iloc[:2]

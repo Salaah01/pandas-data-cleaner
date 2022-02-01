@@ -6,56 +6,52 @@ function that is used to run the cleaning strategy.
 import typing as _t
 import pandas as pd
 from abc import ABC, abstractmethod
+from .exceptions import MissingOptionsError
 
 
 class CleaningStrategy(ABC):
     """This class defines the strategy for cleaning data."""
 
-    requires_django: bool = False
+    required_options: _t.List[str] = []
 
-    def __init__(self, dataframe: pd.DataFrame, model):
+    def __init__(self, dataframe: pd.DataFrame, **options):
         """Initialize the cleaning strategy.
 
         Args:
             dataframe: A pandas dataframe.
-            model: A django model.
+            **options: Keyword arguments containing options for the cleaning
+                strategy.
         """
         self.dataframe = dataframe
-        self.model = model
         self.dataset_has_been_reversed = False
 
-    def can_use_cleaner(self) -> _t.Tuple[bool, _t.Union[str, None]]:
+        # Add all options to the `self` object
+        for key, value in options.items():
+            setattr(self, key, value)
+
+    def can_use_cleaner(self) -> _t.Tuple[bool, _t.List[str]]:
         """Returns True if the cleaning strategy can be used.
 
         Returns:
             A tuple containing a boolean indicating if the cleaning strategy
-            can be used and a string containing an error message if the
-            cleaning strategy cannot be used. If the cleaning strategy can be
-            used, the error message will be None.
+            can be used and a list of missing options.
         """
-        # Check Django requirements
-        if self.requires_django:
-            try:
-                import django  # noqa: F401
-            except ImportError:
-                return (
-                    False,
-                    "This cleaning strategy requires django to be installed.",
-                )
+        missing_options = []
+        for option in self.required_options:
+            if not hasattr(self, option):
+                missing_options.append(option)
 
-        # Check if the model has the required attributes
-        can_use = hasattr(self.model, "DataCleaner")
-        if not can_use:
-            return False, "The model does not have a DataCleaner class."
-        return True, None
+        return (len(missing_options) == 0, missing_options)
 
-    def validate_model(self) -> None:
-        """Validates if the model can run a cleaning strategy. If not, raise
-        an error.
+    def validate_options(self) -> None:
+        """Validates if the right options have been provided.
+
+        Raises:
+            MissingOptionsError: Raised when options are missing.
         """
-        can_use, error_message = self.can_use_cleaner()
+        can_use, missing_options = self.can_use_cleaner()
         if not can_use:
-            raise NotImplementedError(error_message)
+            raise MissingOptionsError(missing_options)
 
     @abstractmethod
     def clean(self) -> pd.DataFrame:
@@ -63,7 +59,6 @@ class CleaningStrategy(ABC):
 
         Args:
             dataframe - The dataframe to be cleaned.
-            model - The model which the data is being cleaned for.
 
         Returns:
             The cleaned dataframe.
@@ -73,23 +68,28 @@ class CleaningStrategy(ABC):
 
 def clean_data(
     dataframe: pd.DataFrame,
-    model,
     strategies: _t.List[CleaningStrategy],
+    **options
 ) -> pd.DataFrame:
-    """This function cleans the data using the given strategies.
+    """This function cleans the data using the given strategies and options for
+    each strategy.
 
     Args:
         dataframe: A pandas dataframe.
-        model: A django model.
         strategies: A list of cleaning strategies.
+        **options: Keyword arguments containing options for the cleaning
 
     Returns:
         The cleaned dataframe.
+
+    Raises:
+        MissingOptionsError: Raised when options are missing.
     """
 
     df = dataframe.copy()
     for strategy in strategies:
-        strat = strategy(df, model)
+        strat = strategy(df, **options)
+        strat.validate_options()
         strat.clean()
         df = strat.dataframe
     return df
