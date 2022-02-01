@@ -1,126 +1,241 @@
-# """Unittests for the `methods` module."""
+"""Unittests for the `methods` module."""
 
-# import unittest
-# import pandas as pd
-# from data_cleaners import methods
-# from tests.utils import models
-
-
-# class TestRemoveDuplicates(unittest.TestCase):
-#     """Unittests for the `RemoveDuplicates` class."""
-
-#     def test_clean_invalid_model(self):
-#         """Test that when a module is provided for which a field map has not
-#         been defined, an `ImplementationError` is raised.
-#         """
-#         remove_duplicates = methods.RemoveDuplicates(
-#             pd.DataFrame({"a": [1, 2, 3]}),
-#             models.MisconfiguredModel
-#         )
-#         with self.assertRaises(NotImplementedError):
-#             remove_duplicates.clean()
-
-#     def test_with_model(self):
-#         """Test that the data for a valid model is cleaned correctly."""
-#         dataframe = pd.DataFrame(
-#             {
-#                 "id": [1, 2, 1],
-#                 "name": ["a", "a", "a"],
-#                 "email": ['a@a.com', 'b@b.com', 'a@a.com'],
-#                 "age": [1, 2, 1],
-#                 "active": [True, True, False],  # Note: This is the only change
-#             }
-#         )
-#         remove_duplicates = methods.RemoveDuplicates(
-#             dataframe,
-#             models.User
-#         )
-#         remove_duplicates.clean()
-#         results = remove_duplicates.dataframe.reset_index(drop=True)
-
-#         expected_results = pd.DataFrame(
-#             {
-#                 "id": [2, 1],
-#                 "name": ["a", "a"],
-#                 "email": ['b@b.com', 'a@a.com'],
-#                 "age": [2, 1],
-#                 "active": [True, False]
-#             }
-#         )
-
-#         self.assertTrue(
-#             results.equals(expected_results),
-#             f"\nActual:\n{results}\nExpected:\n{expected_results}",
-#         )
+import unittest
+import pandas as pd
+from data_cleaners import strategies
+from data_cleaners.exceptions import MissingOptionsError
 
 
-# class TestFilterValidForeignKeys(unittest.TestCase):
-#     """Unittests for the `FilterValidForeignKeys` class."""
+class TestRemoveDuplicates(unittest.TestCase):
+    """Unittests for the `RemoveDuplicates` class."""
 
-#     def test_ad_group(self):
-#         """Test that the `clean` removes the correct data when being used for
-#         the `campaign_models.AdGroup` class.
-#         """
+    def test_invalid_options(self):
+        """Test that when no options are provided, the `can_use_cleaner` method
+        indicates that there is an error.
+        """
 
-#         # Load the Campaign model with data as the AdGroup model contains a
-#         # foreign key to the Campaign model.
-#         dataframe = pd.DataFrame({
-#             "id": [1, 2, 3],
-#             "user_id": [1, 2, 3],
-#             "product_id": [1, 2, 3],
-#             "price": [1, 2, 3],
-#             "quantity": [1, 2, 3],
-#         })
+        strategy = strategies.RemoveDuplicates(pd.DataFrame({'a': [1, 2, 3]}))
+        can_use, missing_options = strategy.can_use_cleaner()
+        self.assertFalse(can_use)
+        self.assertEqual(len(missing_options), 2)
 
-#         filter_valid_fks = methods.DjFilterValidForeignKeys(
-#             dataframe,
-#             models.Purchase
-#         )
-#         filter_valid_fks.clean()
-#         results = filter_valid_fks.dataframe.reset_index(drop=True)
+    def test_clean_keep_last(self):
+        """Test that the `clean` method removes duplicates where `keep` is set
+        to `last`.
+        """
 
-#         expected_results = pd.DataFrame({
-#             "id": [1, 2],
-#             "user_id": [1, 2],
-#             "product_id": [1, 2],
-#             "price": [1, 2],
-#             "quantity": [1, 2],
-#         })
+        dataframe = pd.DataFrame(
+            {
+                "id": [1, 2, 1],
+                "name": ["a", "a", "a"],
+                "email": ['a@a.com', 'b@b.com', 'a@a.com'],
+                "age": [1, 2, 1],
+                "active": [True, True, False],  # Note: This is the only change
+            }
+        )
 
-#         self.assertTrue(
-#             results.equals(expected_results),
-#             f"\nActual:\n{results}\nExpected:\n{expected_results}",
-#         )
+        strategy = strategies.RemoveDuplicates(
+            dataframe,
+            remove_duplicates_subset_fields=['id'],
+            remove_duplicates_keep='last'
+        )
+        strategy.clean()
+        results = strategy.dataframe.reset_index(drop=True)
+
+        expected_results = pd.DataFrame(
+            {
+                "id": [2, 1],
+                "name": ["a", "a"],
+                "email": ['b@b.com', 'a@a.com'],
+                "age": [2, 1],
+                "active": [True, False]
+            }
+        )
+
+        self.assertTrue(
+            results.equals(expected_results),
+            f"\nActual:\n{results}\nExpected:\n{expected_results}",
+        )
+
+    def test_clean_keep_first(self):
+        """Test that the `clean` method removes duplicates where `keep` is set
+        to `first`.
+        """
+
+        dataframe = pd.DataFrame(
+            {
+                "id": [1, 2, 1],
+                "name": ["a", "a", "a"],
+                "email": ['a@a.com', 'b@b.com', 'a@a.com'],
+                "age": [1, 2, 1],
+                "active": [True, True, False],  # Note: This is the only change
+            }
+        )
+
+        strategy = strategies.RemoveDuplicates(
+            dataframe,
+            remove_duplicates_subset_fields=['id'],
+            remove_duplicates_keep='first'
+        )
+        strategy.clean()
+        results = strategy.dataframe.reset_index(drop=True)
+
+        expected_results = pd.DataFrame(
+            {
+                "id": [1, 2],
+                "name": ["a", "a"],
+                "email": ['a@a.com', 'b@b.com'],
+                "age": [1, 2],
+                "active": [True, True]
+            }
+        )
+
+        self.assertTrue(
+            results.equals(expected_results),
+            f"\nActual:\n{results}\nExpected:\n{expected_results}",
+        )
 
 
-# # class RemoveColumns(unittest.TestCase):
-# #     """Unittests for the `RemoveColumns` class."""
+class TestRenameHeaders(unittest.TestCase):
+    """Unittests for the `RenameHeaders` class."""
 
-# #     def test_remove_columns(self):
-# #         """Test that the `clean` method removes the correct columns."""
-# #         dataframe = pd.DataFrame(
-# #             {
-# #                 "a": [1, 2, 3],
-# #                 "b": [1, 2, 3],
-# #                 "c": [1, 2, 3],
-# #             }
-# #         )
+    def test_invalid_options(self):
+        """Test that when no options are provided, the `can_use_cleaner` method
+        indicates that there is an error.
+        """
 
-# #         model = SimpleNamespace(
-# #             DataCleaner=SimpleNamespace(remove_columns=["a", "b"])
-# #         )
+        strategy = strategies.RenameHeaders(pd.DataFrame({'a': [1, 2, 3]}))
+        can_use, missing_options = strategy.can_use_cleaner()
+        self.assertFalse(can_use)
+        self.assertEqual(len(missing_options), 1)
 
-# #         remove_columns = methods.RemoveColumns(dataframe, model)
-# #         remove_columns.clean()
-# #         results = remove_columns.dataframe.reset_index(drop=True)
+    def test_clean_rename_headers(self):
+        """Test that the `clean` method renames headers."""
 
-# #         expected_results = pd.DataFrame({"c": [1, 2, 3]})
+        dataframe = pd.DataFrame(
+            {
+                "id": [1, 2, ],
+                "name": ["a", "b"]
+            }
+        )
+        strategy = strategies.RenameHeaders(
+            dataframe,
+            rename_headers_header_map={'id': 'customer_id'}
+        )
+        strategy.clean()
+        results = strategy.dataframe.reset_index(drop=True)
 
-# #         self.assertTrue(
-# #             results.equals(expected_results),
-# #             f"\nActual:\n{results}\nExpected:\n{expected_results}",
-# #         )
+        expected_results = pd.DataFrame(
+            {
+                "customer_id": [1, 2],
+                "name": ["a", "b"]
+            }
+        )
+
+        self.assertTrue(
+            results.equals(expected_results),
+            f"\nActual:\n{results}\nExpected:\n{expected_results}",
+        )
 
 
-# # if __name__ == "__main__":
-# #     unittest.main()
+class TestFilterValidForeignKeys(unittest.TestCase):
+    """Unittests for the `FilterValidationForeignKeys` class."""
+
+    def test_invalid_options(self):
+        """Test that when no options are provided, the `can_use_cleaner` method
+        indicates that there is an error.
+        """
+
+        strategy = strategies.FilterValidForeignKeys(
+            pd.DataFrame({'a': [1, 2, 3]})
+        )
+        can_use, missing_options = strategy.can_use_cleaner()
+        self.assertFalse(can_use)
+        self.assertEqual(len(missing_options), 3)
+
+    def test_clean_filter_valid_foreign_keys(self):
+        """Test that the `clean` method removes invalid foreign keys."""
+
+        dataframe_1 = pd.DataFrame(
+            {
+                "id": [1, 2, 3],
+                "letter": ["a", "b", "c"]
+            }
+        )
+
+        dataframe_2 = pd.DataFrame(
+            {
+                "id": [1, 2, 3],
+                "fk": [1, 2, 5],
+            }
+        )
+
+        strategy = strategies.FilterValidForeignKeys(
+            dataframe_2,
+            filter_valid_fk_df=dataframe_1,
+            filter_valid_pk_field='id',
+            filter_valid_fk_field='fk'
+        )
+
+        strategy.clean()
+
+        results = strategy.dataframe.reset_index(drop=True)
+
+        expected_results = pd.DataFrame(
+            {
+                "id": [1, 2],
+                "fk": [1, 2],
+            }
+        )
+
+        self.assertTrue(
+            results.equals(expected_results),
+            f"\nActual:\n{results}\nExpected:\n{expected_results}",
+        )
+
+
+class TestRemoveColumns(unittest.TestCase):
+    """Unittests for the `RemoveColumns` class."""
+
+    def test_invalid_options(self):
+        """Test that when no options are provided, the `can_use_cleaner` method
+        indicates that there is an error.
+        """
+
+        strategy = strategies.FilterValidForeignKeys(
+            pd.DataFrame({'a': [1, 2, 3]})
+        )
+        can_use, missing_options = strategy.can_use_cleaner()
+        self.assertFalse(can_use)
+        self.assertEqual(len(missing_options), 3)
+
+    def test_clean_remove_columns(self):
+        """Test that the `clean` method removes the columns specified."""
+
+        dataframe = pd.DataFrame(
+            {
+                "id": [1, 2, 3],
+                "col1": [1, 2, 3],
+                "col2": [1, 2, 3],
+                "col3": [1, 2, 3],
+            }
+        )
+
+        strategy = strategies.RemoveColumns(
+            dataframe,
+            remove_columns=['col1', 'col2']
+        )
+        strategy.clean()
+        results = strategy.dataframe.reset_index(drop=True)
+
+        expected_results = pd.DataFrame(
+            {
+                "id": [1, 2, 3],
+                "col3": [1, 2, 3],
+            }
+        )
+
+        self.assertTrue(
+            results.equals(expected_results),
+            f"\nActual:\n{results}\nExpected:\n{expected_results}",
+        )
