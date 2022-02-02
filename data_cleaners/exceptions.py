@@ -14,4 +14,4 @@ class MissingOptionsError(Exception):
     def __str__(self):
         """Return a string representation of the exception."""
         missing_opts_str = "\n".join(self.missing_options)
-        return f"Missing options:\n{missing_opts_str}"
+        return f"Missing kwargs:\n{missing_opts_str}"

@@ -29,6 +29,17 @@ class CleaningStrategy(ABC):
         for key, value in options.items():
             setattr(self, key, value)
 
+    @classmethod
+    def info(cls) -> str:
+        """Returns a formatted version of the documentation."""
+        return (
+            cls.__doc__
+            .replace('    ', '')
+            .replace('\t', '')
+            .replace('\n', ' ')
+        )
+
+
     def can_use_cleaner(self) -> _t.Tuple[bool, _t.List[str]]:
         """Returns True if the cleaning strategy can be used.
 

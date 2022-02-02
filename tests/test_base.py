@@ -10,6 +10,12 @@ from tests.utils import strategies
 class TestCleaningStrategy(TestCase):
     """Unittests for the `CleaningStrategy` class."""
 
+    def test_info(self):
+        """Test that the `info` method returns a formated version of the
+        docstring.
+        """
+        self.assertIsInstance(base.CleaningStrategy.info(), str)
+
     def test_can_use_cleaner_pass(self):
         """Test that the `can_use_cleaner` method indicates `True` when a
         model has the attributes the method expects.
