@@ -59,6 +59,7 @@ dataframe = clean_data(dataframe, [RemoveDuplicates])
 ```
 
 Running this will result in the following error:
+
 ```bash
 pandas_data_cleaner.exceptions.MissingOptionsError: Missing kwargs:
 remove_duplicates_subset_fields
