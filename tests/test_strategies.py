@@ -2,7 +2,7 @@
 
 import unittest
 import pandas as pd
-from data_cleaners import strategies
+from pandas_data_cleaner import strategies
 
 
 class TestRemoveDuplicates(unittest.TestCase):

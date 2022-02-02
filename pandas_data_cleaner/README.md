@@ -43,8 +43,8 @@ As part of our cleaning exercise, we want to keep the latest row of data as this
 
 Let's try to apply the `RemoveDuplicates` cleaning strategy to the data frame:
 ```python
-from data_cleaners.base import clean_data
-from data_cleaners.methods import RemoveDuplicates
+from pandas_data_cleaner.base import clean_data
+from pandas_data_cleaner.methods import RemoveDuplicates
 
 dataframe = pd.DataFrame({
     "id": [1, 2, 1],
@@ -115,12 +115,12 @@ In our example we used only one cleaning strategy, but we are free to use as man
 ## Creating Custom Cleaning Strategies
 Let's suppose we want to create a cleaning strategy that removes all rows with a `status` of `DISABLED` on data that we intend to load into the `Campaign` model.
 
-If the strategy is generic and could possibly be used by other apps, it should be placed in `data_cleaners/methods.py`. Otherwise, it should be placed in a local app directory. This is to prevent `methods.py` for becoming cluttered.
+If the strategy is generic and could possibly be used by other apps, it should be placed in `pandas_data_cleaner/methods.py`. Otherwise, it should be placed in a local app directory. This is to prevent `methods.py` for becoming cluttered.
 
 For our example, we will create a new file `campaigns/cleaning_methods.py` with the following code:
 ```python
 # We need to import the abstract base class to create new strategies.
-from data_cleaners.base import CleaningStrategy
+from pandas_data_cleaner.base import CleaningStrategy
 
 
 class RemoveDisabled(CleaningStrategy):  # Need to inherit from CleaningStrategy

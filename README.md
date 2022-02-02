@@ -3,15 +3,20 @@ This package is a data cleaning tool for Pandas DataFrames and other objects wit
 
 The tool is designed to help clean data by providing a function onto which you can apply various cleaning methods.
 
-The main cleaning function can be found in `data_cleaners.base.clean_data`.
+The main cleaning function can be found in `pandas_data_cleaner.base.clean_data`.
 
-The app also provides an abstract base class `data_cleaners.base.CleaningStrategy` which can be used to implement custom cleaning strategies.
+The app also provides an abstract base class `pandas_data_cleaner.base.CleaningStrategy` which can be used to implement custom cleaning strategies.
 
+## Installation
+To install the application, run the following command:
+```bash
+pip install pandas-data-cleaner
+```
 
 ## Cleaning Data
 In order to clean data, you need:
 * Pandas DataFrame
-* List of strategies to applyA
+* List of strategies to apply
 * Any additional arguments that you may need to pass to the cleaning function.
 
 Let's suppose we have the following DataFrame:
@@ -25,7 +30,7 @@ dataframe = pd.DataFrame({
     "status": ["ENABLED", "ENABLED", "DISABLED"],
 })
 ```
-As a table, this would look like:
+As a table, this would look like this:
 
 | id  | structure_value | status   |
 | --- | --------------- | -------- |
@@ -41,8 +46,8 @@ Let's try to apply the RemoveDuplicates cleaning strategy to the data frame:
 
 ```python
 import pandas as pd
-from data_cleaners.base import clean_data
-from data_cleaners.strategies import RemoveDuplicates
+from pandas_data_cleaner.base import clean_data
+from pandas_data_cleaner.strategies import RemoveDuplicates
 
 dataframe = pd.DataFrame({
     "id": [1, 2, 1],
@@ -55,7 +60,7 @@ dataframe = clean_data(dataframe, [RemoveDuplicates])
 
 Running this will result in the following error:
 ```bash
-data_cleaners.exceptions.MissingOptionsError: Missing kwargs:
+pandas_data_cleaner.exceptions.MissingOptionsError: Missing kwargs:
 remove_duplicates_subset_fields
 remove_duplicates_keep
 ```
@@ -77,8 +82,8 @@ If we now tweak our earlier code:
 
 ```python
 import pandas as pd
-from data_cleaners.base import clean_data
-from data_cleaners.strategies import RemoveDuplicates
+from pandas_data_cleaner.base import clean_data
+from pandas_data_cleaner.strategies import RemoveDuplicates
 
 dataframe = pd.DataFrame({
     "id": [1, 2, 1],
@@ -94,7 +99,7 @@ dataframe = clean_data(
 )
 ```
 
-We will now get the following dataframe:
+We will now get the following data frame:
 
 ```python
 pd.DataFrame({
@@ -111,17 +116,17 @@ As a table:
 | 2   | a               | ENABLED  |
 | 1   | a               | DISABLED |
 
-As we had set `remove_duplicates_subset_fields=["id"]`, it found that there were two rows wit the same ID. As we set `remove_duplicates_keep="last"`, it kept the last row only.
+As we had set `remove_duplicates_subset_fields=["id"]`, it found that there were two rows with the same ID. As we set `remove_duplicates_keep="last"`, it kept the last row only.
 
-In our example we used only one cleaning strategy, but we are free to use as many as we like, we simply need to add all the strategies to the list of cleaning strategies to apply.
+In our example, we used only one cleaning strategy, but we are free to use as many as we like, we simply need to add all the strategies to the list of cleaning strategies to apply.
 
 ## Creating Custom Cleaning Strategies
-Let's suppose we intent to create a new cleaning strategy that removes certain columns.
+Let's suppose we intend to create a new cleaning strategy that removes certain columns.
 
 We would create a new class inheriting from `base.CleaningStrategy`:
 
 ```python
-from data_cleaners.base import CleaningStrategy
+from pandas_data_cleaner.base import CleaningStrategy
 
 
 class RemoveColumns(CleaningStrategy):
@@ -132,7 +137,7 @@ When using this strategy, we need to know which column names to remove. We will 
 
 To do this, we simply create a class attribute called `required_options` and set it to `["remove_columns"]`.
 
-We also will add some documentation to allow the end user to receive some useful information when they run `RemoveColumns.info()`.
+We also will add some documentation to allow the end-user to receive some useful information when they run `RemoveColumns.info()`.
 
 Our new strategy will now look like this:
 
@@ -174,7 +179,7 @@ Firstly, whenever a user would use this strategy may run the following:
 clean_data(dataframe, [RemoveColumns], remove_columns=["id", "status"])
 ```
 
-`clean_data` will instantiate each cleaning strategy, in this case, just `RemoveColumns` providing the dataframe as a required initial parameter as well as passing any keyword arguments to the function.
+`clean_data` will instantiate each cleaning strategy, in this case, just `RemoveColumns` providing the data frame as a required initial parameter as well as passing any keyword arguments to the function.
 
 Each strategy would then set both the `dataframe` and each keyword argument to the self object.
 
@@ -194,7 +199,7 @@ Then within the clean method would have access:
 
 By adding `remove_columns` to the `required_options` list, once this class is instantiated, we will be able to access `self.remove_columns`.
 
-Now that we have built our cleaning strategy lets run it:
+Now that we have built our cleaning strategy let's run it:
 
 ```python
 dataframe = pd.DataFrame({

@@ -1,7 +1,7 @@
 """Contains dummy strategies for unittesting."""
 
 
-from data_cleaners import base
+from pandas_data_cleaner import base
 import pandas as pd
 
 
