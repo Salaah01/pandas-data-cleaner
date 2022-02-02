@@ -4,6 +4,12 @@ This app contains a number of cleaning strategies for cleaning data. These can b
 
 The app also provides an abstract class `base.CleaningStrategy` which can be used to implement custom cleaning strategies.
 
+## Installation
+To install the package, run the following command:
+```bash
+pip install pandas-data-cleaner
+```
+
 ## Cleaning Data
 To clean data using `base.clean_data` you will need:
 * A pandas data frame as the source data.
@@ -168,3 +174,10 @@ As a table:
 | --- | --------------- | ------- |
 | 1   | a               | Enabled |
 | 1   | a               | Enabled |
+
+
+## Running Tests
+To run the tests, run the following command from the root of the project:
+```bash
+python tests/run_tests.py
+```
